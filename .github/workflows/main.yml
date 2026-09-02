@@ -1,0 +1,40 @@
+name: Build Moonlight iOS
+
+on:
+  workflow_dispatch: # This allows you to trigger the build manually
+
+jobs:
+  build:
+    name: Build IPA
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          
+      - name: Build Unsigned App
+        run: |
+          xcodebuild clean build \
+            -project Moonlight.xcodeproj \
+            -scheme Moonlight \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build"
+            
+      - name: Package into IPA
+        run: |
+          mkdir -p Payload
+          mv build/Moonlight.app Payload/
+          zip -qr Moonlight.ipa Payload
+          
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonlight-iOS-IPA
+          path: Moonlight.ipa
